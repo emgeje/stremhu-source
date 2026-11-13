@@ -7,6 +7,7 @@ import { ChangePasswordDialog } from '@/features/change-password/change-password
 import { ChangeUsernameDialog } from '@/features/change-username/change-username-dialog'
 import { ConfirmDialog } from '@/features/confirm/confirm-dialog'
 import { EditIndexerDialog } from '@/features/edit-indexer/edit-indexer-dialog'
+import { NotificationSettingsDialog } from '@/features/notification-settings/notification-settings-dialog'
 import type { OpenedDialog } from '@/routes/-features/dialogs/dialogs-store'
 import { useDialogsStore } from '@/routes/-features/dialogs/dialogs-store'
 
@@ -21,6 +22,7 @@ const dialogComponents = {
   CHANGE_PASSWORD: ChangePasswordDialog,
   ADD_USER: AddUserDialog,
   EDIT_INDEXER: EditIndexerDialog,
+  NOTIFICATION_SETTINGS: NotificationSettingsDialog,
 } satisfies DialogComponentMap
 
 export function Dialogs() {

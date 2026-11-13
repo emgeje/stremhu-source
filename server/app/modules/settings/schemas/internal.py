@@ -1,12 +1,14 @@
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.config import config
 from app.modules.settings.enums import (
+    DiskAlertLevelEnum,
     NetworkConnectionEnum,
     NetworkModeEnum,
     RelayEncryptionEnum,
+    SmtpSecurityEnum,
 )
 
 
@@ -86,3 +88,53 @@ class RelaySettingsUpdate(BaseModel):
     enable_upnp_and_natpmp: bool | None = None
     encryption: RelayEncryptionEnum | None = None
     enable_utp: bool | None = None
+
+
+# Notifications Settings
+
+
+class EmailNotificationSettings(BaseModel):
+    enabled: bool = False
+    smtp_host: str = ""
+    smtp_port: int = Field(default=587, ge=1, le=65535)
+    security: SmtpSecurityEnum = SmtpSecurityEnum.STARTTLS
+    username: str = ""
+    password: str = ""
+    sender: str = ""
+    recipients: list[str] = Field(default_factory=list)
+
+
+class TelegramNotificationSettings(BaseModel):
+    enabled: bool = False
+    bot_token: str = ""
+    chat_id: str = ""
+
+
+class DiskAlertSettings(BaseModel):
+    enabled: bool = True
+    warning_percent: int = Field(default=85, ge=1, le=99)
+    critical_percent: int = Field(default=95, ge=1, le=99)
+    repeat_hours: int = Field(default=24, ge=0, le=24 * 30)
+    notify_recovery: bool = True
+
+    @model_validator(mode="after")
+    def validate_thresholds(self) -> "DiskAlertSettings":
+        if self.warning_percent >= self.critical_percent:
+            raise ValueError(
+                "A figyelmeztetési szintnek kisebbnek kell lennie a kritikus szintnél."
+            )
+        return self
+
+
+class NotificationSettings(BaseModel):
+    server_name: str = ""
+    disk_alert: DiskAlertSettings = Field(default_factory=DiskAlertSettings)
+    email: EmailNotificationSettings = Field(default_factory=EmailNotificationSettings)
+    telegram: TelegramNotificationSettings = Field(
+        default_factory=TelegramNotificationSettings
+    )
+
+
+class DiskAlertState(BaseModel):
+    level: DiskAlertLevelEnum = DiskAlertLevelEnum.OK
+    notified_at: int = 0

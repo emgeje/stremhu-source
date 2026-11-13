@@ -1,6 +1,7 @@
 import { Outlet, createFileRoute } from '@tanstack/react-router'
 
 import { getIndexers } from '@/shared/queries/indexers'
+import { getNotificationSettings } from '@/shared/queries/notifications'
 import { getSystemSettings } from '@/shared/queries/system'
 import { getUsers } from '@/shared/queries/users'
 
@@ -15,6 +16,7 @@ export const Route = createFileRoute('/_protected/dashboard/system')({
       context.queryClient.ensureQueryData(getSystemSettings),
       context.queryClient.ensureQueryData(getIndexers),
       context.queryClient.ensureQueryData(getUsers),
+      context.queryClient.ensureQueryData(getNotificationSettings),
     ])
   },
   loader: () => {

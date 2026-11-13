@@ -4,8 +4,10 @@ from app.config import config
 from app.modules.settings.enums import NetworkModeEnum, SettingsKeyEnum
 from app.modules.settings.repository import SettingsRepository
 from app.modules.settings.schemas.internal import (
+    DiskAlertState,
     NetworkManualSettings,
     NetworkSettings,
+    NotificationSettings,
     RelaySettings,
     RelaySettingsUpdate,
     SystemSettings,
@@ -71,6 +73,33 @@ class SettingsService:
         if not relay_settings:
             raise ValueError("A Relay beállítások nem léteznek.")
         return relay_settings
+
+    # Notification Settings
+
+    def get_notifications(self) -> NotificationSettings:
+        record = self._settings_repository.find_one(SettingsKeyEnum.NOTIFICATIONS.value)
+        if not record or not record.value:
+            return NotificationSettings()
+        return NotificationSettings.model_validate(record.value)
+
+    def save_notifications(self, payload: NotificationSettings) -> NotificationSettings:
+        self._settings_repository.save(
+            SettingsKeyEnum.NOTIFICATIONS, payload.model_dump(mode="json")
+        )
+        return payload
+
+    def get_disk_alert_state(self) -> DiskAlertState:
+        record = self._settings_repository.find_one(
+            SettingsKeyEnum.DISK_ALERT_STATE.value
+        )
+        if not record or not record.value:
+            return DiskAlertState()
+        return DiskAlertState.model_validate(record.value)
+
+    def save_disk_alert_state(self, state: DiskAlertState) -> None:
+        self._settings_repository.save(
+            SettingsKeyEnum.DISK_ALERT_STATE, state.model_dump(mode="json")
+        )
 
     # Network Settings
 

@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from app.modules.indexers.background_tasks import run_indexers_cleanup
@@ -5,6 +7,7 @@ from app.modules.network.background_tasks import (
     run_check_ssl_certificate,
     run_network_ip_sync,
 )
+from app.modules.notifications.background_tasks import run_disk_space_check
 from app.modules.pairings.background_tasks import run_expired_pairings_cleanup
 from app.modules.torrent_files.background_tasks import (
     run_torrent_files_retention_cleanup,
@@ -62,6 +65,16 @@ def setup_scheduler() -> AsyncIOScheduler:
         hour=5,
         minute=0,
         id="ssl_certificate_check",
+        replace_existing=True,
+    )
+
+    # Tárhely telítettség ellenőrzése és értesítés (5 percenként, első futás indulás után 1 perccel)
+    scheduler.add_job(
+        run_disk_space_check,
+        trigger="interval",
+        minutes=5,
+        next_run_time=datetime.now() + timedelta(minutes=1),
+        id="disk_space_check",
         replace_existing=True,
     )
 

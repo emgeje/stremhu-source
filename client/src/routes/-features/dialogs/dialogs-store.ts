@@ -8,6 +8,7 @@ import type { ChangePasswordDialog } from '@/features/change-password/change-pas
 import type { ChangeUsernameDialog } from '@/features/change-username/change-username.types'
 import type { ConfirmDialog } from '@/features/confirm/confirm.types'
 import type { EditIndexerDialog } from '@/features/edit-indexer/edit-indexer.type'
+import type { NotificationSettingsDialog } from '@/features/notification-settings/notification-settings.types'
 
 type BaseOpenDialog = {
   onClose?: () => void
@@ -21,6 +22,7 @@ export type OpenDialog = BaseOpenDialog &
     | ChangePasswordDialog
     | AddUserDialog
     | EditIndexerDialog
+    | NotificationSettingsDialog
   )
 
 type BaseDialogContent = {

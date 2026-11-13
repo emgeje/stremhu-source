@@ -443,6 +443,118 @@ export interface RegisterRequest {
   password: string
 }
 
+export type DiskAlertLevelEnum =
+  (typeof DiskAlertLevelEnum)[keyof typeof DiskAlertLevelEnum]
+
+export const DiskAlertLevelEnum = {
+  ok: 'ok',
+  warning: 'warning',
+  critical: 'critical',
+  full: 'full',
+} as const
+
+export interface DiskAlertSettingsResponse {
+  enabled: boolean
+  warningPercent: number
+  criticalPercent: number
+  repeatHours: number
+  notifyRecovery: boolean
+}
+
+export interface DiskAlertSettingsUpdate {
+  enabled?: boolean
+  warningPercent?: number
+  criticalPercent?: number
+  repeatHours?: number
+  notifyRecovery?: boolean
+}
+
+export interface DiskUsageResponse {
+  path: string
+  total: number
+  used: number
+  free: number
+  percent: number
+}
+
+export interface DiskStatusResponse {
+  level: DiskAlertLevelEnum
+  usages: DiskUsageResponse[]
+  notifiedLevel: DiskAlertLevelEnum
+  notifiedAt: string | null
+}
+
+export type SmtpSecurityEnum =
+  (typeof SmtpSecurityEnum)[keyof typeof SmtpSecurityEnum]
+
+export const SmtpSecurityEnum = {
+  none: 'none',
+  starttls: 'starttls',
+  ssl: 'ssl',
+} as const
+
+export interface EmailNotificationSettingsResponse {
+  enabled: boolean
+  smtpHost: string
+  smtpPort: number
+  security: SmtpSecurityEnum
+  username: string
+  passwordSet: boolean
+  sender: string
+  recipients: string[]
+}
+
+export interface EmailNotificationSettingsUpdate {
+  enabled?: boolean
+  smtpHost?: string
+  smtpPort?: number
+  security?: SmtpSecurityEnum
+  username?: string
+  /** `null` esetén a korábban mentett jelszó megmarad. */
+  password?: string | null
+  sender?: string
+  recipients?: string[]
+}
+
+export interface TelegramNotificationSettingsResponse {
+  enabled: boolean
+  botTokenSet: boolean
+  chatId: string
+}
+
+export interface TelegramNotificationSettingsUpdate {
+  enabled?: boolean
+  /** `null` esetén a korábban mentett token megmarad. */
+  botToken?: string | null
+  chatId?: string
+}
+
+export interface NotificationSettingsResponse {
+  serverName: string
+  diskAlert: DiskAlertSettingsResponse
+  email: EmailNotificationSettingsResponse
+  telegram: TelegramNotificationSettingsResponse
+}
+
+export interface NotificationSettingsUpdateRequest {
+  serverName?: string
+  diskAlert: DiskAlertSettingsUpdate
+  email: EmailNotificationSettingsUpdate
+  telegram: TelegramNotificationSettingsUpdate
+}
+
+export type NotificationChannelEnum =
+  (typeof NotificationChannelEnum)[keyof typeof NotificationChannelEnum]
+
+export const NotificationChannelEnum = {
+  email: 'email',
+  telegram: 'telegram',
+} as const
+
+export interface NotificationTestRequest {
+  channel: NotificationChannelEnum
+}
+
 export type RelayEncryptionEnum =
   (typeof RelayEncryptionEnum)[keyof typeof RelayEncryptionEnum]
 
@@ -1319,6 +1431,70 @@ export const systemRestart = (
 /**
  * @summary Get Settings
  */
+export const notificationsGetSettings = (
+  options?: SecondParameter<
+    typeof sourceClientInstance<NotificationSettingsResponse>
+  >,
+) => {
+  return sourceClientInstance<NotificationSettingsResponse>(
+    { url: `/api/notifications/settings`, method: 'GET' },
+    options,
+  )
+}
+
+/**
+ * @summary Update Settings
+ */
+export const notificationsUpdateSettings = (
+  notificationSettingsUpdateRequest: NotificationSettingsUpdateRequest,
+  options?: SecondParameter<
+    typeof sourceClientInstance<NotificationSettingsResponse>
+  >,
+) => {
+  return sourceClientInstance<NotificationSettingsResponse>(
+    {
+      url: `/api/notifications/settings`,
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      data: notificationSettingsUpdateRequest,
+    },
+    options,
+  )
+}
+
+/**
+ * @summary Send Test
+ */
+export const notificationsSendTest = (
+  notificationTestRequest: NotificationTestRequest,
+  options?: SecondParameter<typeof sourceClientInstance<SuccessResponse>>,
+) => {
+  return sourceClientInstance<SuccessResponse>(
+    {
+      url: `/api/notifications/test`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: notificationTestRequest,
+    },
+    options,
+  )
+}
+
+/**
+ * @summary Get Disk Status
+ */
+export const notificationsGetDiskStatus = (
+  options?: SecondParameter<typeof sourceClientInstance<DiskStatusResponse>>,
+) => {
+  return sourceClientInstance<DiskStatusResponse>(
+    { url: `/api/notifications/disk`, method: 'GET' },
+    options,
+  )
+}
+
+/**
+ * @summary Get Settings
+ */
 export const relayGetSettings = (
   options?: SecondParameter<typeof sourceClientInstance<RelaySettingsResponse>>,
 ) => {
@@ -1984,4 +2160,16 @@ export type PlaybacksGetListResult = NonNullable<
 >
 export type PlaybacksGetHistoryListResult = NonNullable<
   Awaited<ReturnType<typeof playbacksGetHistoryList>>
+>
+export type NotificationsGetSettingsResult = NonNullable<
+  Awaited<ReturnType<typeof notificationsGetSettings>>
+>
+export type NotificationsUpdateSettingsResult = NonNullable<
+  Awaited<ReturnType<typeof notificationsUpdateSettings>>
+>
+export type NotificationsSendTestResult = NonNullable<
+  Awaited<ReturnType<typeof notificationsSendTest>>
+>
+export type NotificationsGetDiskStatusResult = NonNullable<
+  Awaited<ReturnType<typeof notificationsGetDiskStatus>>
 >

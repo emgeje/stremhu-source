@@ -474,6 +474,7 @@ export interface DiskUsageResponse {
   total: number
   used: number
   free: number
+  reclaimable: number
   percent: number
 }
 

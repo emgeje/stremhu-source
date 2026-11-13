@@ -97,6 +97,8 @@ export function DiskAlerts() {
             <p className="text-muted-foreground text-sm">
               {formatFilesize(usage.used)} / {formatFilesize(usage.total)}{' '}
               foglalt · {formatFilesize(usage.free)} szabad
+              {usage.reclaimable > 0 &&
+                ` (ebből ${formatFilesize(usage.reclaimable)} seedben tartott, törölhető)`}
             </p>
           </div>
         ))}

@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 from fastapi import HTTPException
 
 from app.common.logger import logger
+from app.config import config
 from app.modules.notifications.channels import (
     NotificationChannelError,
     send_email,
@@ -37,11 +38,57 @@ from app.modules.settings.schemas.internal import (
     TelegramNotificationSettings,
 )
 from app.modules.settings.service import SettingsService
+from app.modules.storage.service import StorageService
 
 
 class NotificationsService:
-    def __init__(self, settings_service: SettingsService):
+    def __init__(
+        self,
+        settings_service: SettingsService,
+        storage_service: StorageService | None = None,
+    ):
         self._settings_service = settings_service
+        self._storage_service = storage_service
+
+    def _collect_usages(self) -> list[DiskUsage]:
+        """Lemezhasználat a riasztáshoz.
+
+        Kézi tárhelykorlát vagy „seed amíg nem kell a hely” mód esetén a letöltési
+        könyvtárnál a StremHU saját tárhely-számítását használja: a korlát a
+        kapacitás, seed módban pedig a törölhető torrentek helye szabadnak számít,
+        hiszen új letöltésnél automatikusan felszabadul.
+        """
+        usages = collect_disk_usages()
+        if self._storage_service is None:
+            return usages
+
+        system_settings = self._settings_service.find_system()
+        if not system_settings or not (
+            system_settings.seed_until_space_needed
+            or system_settings.storage_limit_bytes
+        ):
+            return usages
+
+        try:
+            status = self._storage_service.get_status()
+        except Exception:
+            logger.exception("⚠️ A tárhely állapota nem kérdezhető le.")
+            return usages
+
+        reclaimable = (
+            status.evictable_bytes if system_settings.seed_until_space_needed else 0
+        )
+        free = min(status.capacity_bytes, status.free_bytes + reclaimable)
+        downloads_path = str(config.downloads_dir)
+        storage_usage = DiskUsage(
+            path=downloads_path,
+            total=status.capacity_bytes,
+            used=max(0, status.capacity_bytes - free),
+            free=free,
+            reclaimable=reclaimable,
+        )
+
+        return [storage_usage] + [u for u in usages if u.path != downloads_path]
 
     # Beállítások
 
@@ -128,7 +175,7 @@ class NotificationsService:
     def get_disk_status(self) -> DiskStatusResponse:
         settings = self.get_settings()
         state = self._settings_service.get_disk_alert_state()
-        usages = collect_disk_usages()
+        usages = self._collect_usages()
         usage = worst_usage(usages)
 
         level = (
@@ -145,6 +192,7 @@ class NotificationsService:
                     total=u.total,
                     used=u.used,
                     free=u.free,
+                    reclaimable=u.reclaimable,
                     percent=u.percent,
                 )
                 for u in usages
@@ -203,7 +251,7 @@ class NotificationsService:
 
     async def send_test(self, channel: NotificationChannelEnum) -> None:
         settings = self.get_settings()
-        usage = worst_usage(collect_disk_usages()) or DiskUsage(
+        usage = worst_usage(self._collect_usages()) or DiskUsage(
             path="-", total=0, used=0, free=0
         )
         state = self._settings_service.get_disk_alert_state()
@@ -240,7 +288,7 @@ class NotificationsService:
         if not settings.email.enabled and not settings.telegram.enabled:
             return
 
-        usage = worst_usage(collect_disk_usages())
+        usage = worst_usage(self._collect_usages())
         if not usage:
             logger.warning("⚠️ A tárhely telítettsége nem kérdezhető le.")
             return

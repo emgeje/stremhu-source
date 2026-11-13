@@ -24,13 +24,13 @@ function SystemRoute() {
           <NetworkAccessInfo />
         </div>
         <div className="break-inside-avoid mb-4">
-          <DiskAlerts />
-        </div>
-        <div className="break-inside-avoid mb-4">
           <TorrentFilesCache />
         </div>
         <div className="break-inside-avoid mb-4">
           <StorageSettings />
+        </div>
+        <div className="break-inside-avoid mb-4">
+          <DiskAlerts />
         </div>
         <div className="break-inside-avoid mb-4">
           <KeepSeeding />

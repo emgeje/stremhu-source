@@ -23,6 +23,9 @@ class DiskUsage:
     total: int
     used: int
     free: int
+    # Seedben tartott, de igény esetén automatikusan törölhető torrentek mérete
+    # (a `free` már tartalmazza).
+    reclaimable: int = 0
 
     @property
     def percent(self) -> float:

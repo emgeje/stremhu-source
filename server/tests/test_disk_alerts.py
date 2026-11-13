@@ -133,3 +133,48 @@ def test_check_disk_space_retries_when_sending_fails(monkeypatch):
 
     # Sikertelen küldés után az állapot nem változik, így a következő futás újrapróbálja.
     assert settings_service.state.level == Level.OK
+
+
+class FakeStorageService:
+    def __init__(self, status):
+        self.status = status
+
+    def get_status(self):
+        return self.status
+
+
+def test_seed_mode_counts_evictable_torrents_as_free(monkeypatch):
+    from types import SimpleNamespace
+
+    from app.config import config
+    from app.modules.settings.schemas.internal import SystemSettings
+
+    monkeypatch.setattr(
+        notifications_service_module, "collect_disk_usages", lambda: [usage(97)]
+    )
+
+    settings_service = FakeSettingsService()
+    settings_service.find_system = lambda: SystemSettings(  # type: ignore[attr-defined]
+        seed_until_space_needed=True
+    )
+    storage_service = FakeStorageService(
+        SimpleNamespace(
+            capacity_bytes=1000 * GIB,
+            free_bytes=30 * GIB,
+            evictable_bytes=400 * GIB,
+        )
+    )
+    service = NotificationsService(
+        settings_service,  # type: ignore[arg-type]
+        storage_service,  # type: ignore[arg-type]
+    )
+
+    usages = service._collect_usages()
+    assert usages[0].path == str(config.downloads_dir)
+    assert usages[0].free == 430 * GIB
+    assert usages[0].reclaimable == 400 * GIB
+    assert classify_usage(usages[0], SETTINGS) == Level.OK
+
+    # Seed mód nélkül a sima lemezhasználat számít
+    settings_service.find_system = lambda: SystemSettings()  # type: ignore[attr-defined]
+    assert classify_usage(service._collect_usages()[0], SETTINGS) == Level.CRITICAL

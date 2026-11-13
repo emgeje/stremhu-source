@@ -98,6 +98,7 @@ class DiskUsageResponse(_CamelModel):
     total: int
     used: int
     free: int
+    reclaimable: int
     percent: float
 
 

@@ -113,6 +113,10 @@ def build_disk_message(
         ("Telítettség", f"{usage.percent:.1f}%"),
         ("Felhasznált", f"{_size(usage.used)} / {_size(usage.total)}"),
         ("Szabad hely", _size(usage.free)),
+    ]
+    if usage.reclaimable > 0:
+        details.append(("Ebből seedben tartott, törölhető", _size(usage.reclaimable)))
+    details += [
         ("Figyelt útvonal", usage.path),
         ("Időpont", datetime.now().astimezone().strftime("%Y-%m-%d %H:%M")),
     ]
